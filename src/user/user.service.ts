@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
@@ -45,14 +44,24 @@ export class UserService {
       select: ['id', 'email', 'password', 'username', 'image', 'bio'],
     });
 
-    const isValidPassword = await compare(password, user.password);
-
-    if (user && isValidPassword) {
-      delete user.password;
-      return user;
+    if (!user) {
+      throw new HttpException(
+        'Credentials are not valid',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
 
-    throw new UnauthorizedException('Invalid credentials');
+    const isPasswordCorrect = await compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      throw new HttpException(
+        'Credentials are not valid',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    delete user.password;
+    return user;
   }
 
   issueToken({ email }: UserEntity): string {
