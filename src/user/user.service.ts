@@ -1,8 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { Repository } from 'typeorm';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UserEntity } from './entities/user.entity';
 import { UserResponseInterface } from './types/userResponse.interface';
@@ -35,6 +37,22 @@ export class UserService {
     const newUser = new UserEntity();
     Object.assign(newUser, { email, username, password: hashPassword });
     return await this.userRepository.save(newUser);
+  }
+
+  async login({ email, password }: LoginDto): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'password', 'username', 'image', 'bio'],
+    });
+
+    const isValidPassword = await compare(password, user.password);
+
+    if (user && isValidPassword) {
+      delete user.password;
+      return user;
+    }
+
+    throw new UnauthorizedException('Invalid credentials');
   }
 
   issueToken({ email }: UserEntity): string {
