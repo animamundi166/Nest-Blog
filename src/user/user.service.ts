@@ -5,6 +5,7 @@ import { compare, hash } from 'bcrypt';
 import { Repository } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateDto } from './dto/update.dto';
 import { UserEntity } from './entities/user.entity';
 import { UserResponseInterface } from './types/userResponse.interface';
 
@@ -64,8 +65,14 @@ export class UserService {
     return user;
   }
 
-  issueToken({ email }: UserEntity): string {
-    return this.jwtService.sign({ email });
+  async updateUser(userId: number, dto: UpdateDto): Promise<UserEntity> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    Object.assign(user, dto);
+    return await this.userRepository.save(user);
+  }
+
+  issueToken({ id }: UserEntity): string {
+    return this.jwtService.sign({ id });
   }
 
   buildUserResponse(user: UserEntity): UserResponseInterface {

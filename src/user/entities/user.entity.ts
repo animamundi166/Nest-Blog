@@ -1,6 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ArticleEntity } from 'src/article/article.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({ name: 'users' })
+@Entity('users')
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -8,7 +9,7 @@ export class UserEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ unique: true })
   username: string;
 
   @Column({ default: '' })
@@ -19,4 +20,7 @@ export class UserEntity {
 
   @Column({ select: false })
   password: string;
+
+  @OneToMany(() => ArticleEntity, (article) => article.author)
+  articles: ArticleEntity[];
 }

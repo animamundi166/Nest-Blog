@@ -1,15 +1,8 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { LoginDto } from './login.dto';
 
-export class RegisterDto {
+export class RegisterDto extends LoginDto {
   @IsString()
   @IsNotEmpty()
   readonly username: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  readonly email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  readonly password: string;
 }
