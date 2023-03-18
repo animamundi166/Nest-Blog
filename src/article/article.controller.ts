@@ -1,9 +1,19 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Delete,
+  Param,
+  Put,
+} from '@nestjs/common';
 import { Auth } from 'src/user/decorators/auth.decorator';
 import { User } from 'src/user/decorators/user.decorator';
 import { UserEntity } from 'src/user/entities/user.entity';
+import { DeleteResult } from 'typeorm';
 import { ArticleService } from './article.service';
-import { CreateArticleDto } from './dto/createArticle.dto';
+import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
 
 @Controller('articles')
@@ -12,11 +22,43 @@ export class ArticleController {
 
   @Auth()
   @Post()
-  async create(
+  async createArticle(
     @User() currentUser: UserEntity,
     @Body('article') dto: CreateArticleDto,
   ): Promise<ArticleResponseInterface> {
     const article = await this.articleService.createArticle(currentUser, dto);
+    return this.articleService.buildArticleResponse(article);
+  }
+
+  @Get(':slug')
+  async getArticle(
+    @Param('slug') slug: string,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.getArticle(slug);
+    return this.articleService.buildArticleResponse(article);
+  }
+
+  @Auth()
+  @Delete(':slug')
+  async deleteArticle(
+    @User('id') currentUserId: number,
+    @Param('slug') slug: string,
+  ): Promise<DeleteResult> {
+    return await this.articleService.deleteArticle(slug, currentUserId);
+  }
+
+  @Auth()
+  @Put(':slug')
+  async updateArticle(
+    @User('id') currentUserId: number,
+    @Param('slug') slug: string,
+    @Body('article') dto: UpdateArticleDto,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.updateArticle(
+      slug,
+      dto,
+      currentUserId,
+    );
     return this.articleService.buildArticleResponse(article);
   }
 }
