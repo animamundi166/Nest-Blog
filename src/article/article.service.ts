@@ -15,7 +15,42 @@ export class ArticleService {
   constructor(
     @InjectRepository(ArticleEntity)
     private readonly articleRepository: Repository<ArticleEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
+
+  async findAll(query: any) {
+    const queryBuilder = this.articleRepository
+      .createQueryBuilder('articles')
+      .leftJoinAndSelect('articles.author', 'author');
+
+    queryBuilder.orderBy('articles.createdAt', 'DESC');
+
+    if (query.tag) {
+      queryBuilder.andWhere('articles.tagList ILIKE :tag', {
+        tag: `%${query.tag}%`,
+      });
+    }
+
+    if (query.author) {
+      const author = await this.userRepository.findOneBy({
+        username: query.author,
+      });
+      queryBuilder.andWhere('articles.authorId = :id', { id: author.id });
+    }
+
+    if (query.limit) {
+      queryBuilder.limit(query.limit);
+    }
+
+    if (query.offset) {
+      queryBuilder.offset(query.offset);
+    }
+
+    const [articles, articlesCount] = await queryBuilder.getManyAndCount();
+
+    return { articles, articlesCount };
+  }
 
   async createArticle(
     currentUser: UserEntity,

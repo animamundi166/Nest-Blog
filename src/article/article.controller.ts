@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Put,
+  Query,
 } from '@nestjs/common';
 import { Auth } from 'src/user/decorators/auth.decorator';
 import { User } from 'src/user/decorators/user.decorator';
@@ -15,10 +16,19 @@ import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
+import { ArticlesResponseInterface } from './types/articlesResponce.interface';
 
 @Controller('articles')
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
+
+  @Get()
+  async findAll(
+    // @User('id') currentUserId: number,
+    @Query() query: any,
+  ): Promise<ArticlesResponseInterface> {
+    return await this.articleService.findAll(query);
+  }
 
   @Auth()
   @Post()
