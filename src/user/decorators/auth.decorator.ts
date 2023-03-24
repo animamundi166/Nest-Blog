@@ -1,4 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../guards/jwt.guard';
 
-export const Auth = () => UseGuards(AuthGuard('jwt'));
+export const Auth = () => UseGuards(JwtAuthGuard);
+export const OptionalAuth = () => UseGuards(OptionalJwtAuthGuard);
