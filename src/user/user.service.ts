@@ -1,4 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { UnprocessableEntityException } from '@nestjs/common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
@@ -26,10 +27,7 @@ export class UserService {
     const userByUsername = await this.userRepository.findOneBy({ username });
 
     if (userByEmail || userByUsername) {
-      throw new HttpException(
-        'Email or username are taken',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new UnprocessableEntityException('Email or username are taken');
     }
 
     const hashPassword = await hash(password, 10);
@@ -53,19 +51,13 @@ export class UserService {
     });
 
     if (!user) {
-      throw new HttpException(
-        'Credentials are not valid',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new UnprocessableEntityException('Credentials are not valid');
     }
 
     const isPasswordCorrect = await compare(password, user.password);
 
     if (!isPasswordCorrect) {
-      throw new HttpException(
-        'Credentials are not valid',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      throw new UnprocessableEntityException('Credentials are not valid');
     }
 
     delete user.password;

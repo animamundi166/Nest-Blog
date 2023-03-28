@@ -28,7 +28,7 @@ export class UserEntity {
   @Column({ select: false })
   password: string;
 
-  @OneToMany(() => ArticleEntity, (article) => article.author)
+  @OneToMany(() => ArticleEntity, (a) => a.author)
   articles: ArticleEntity[];
 
   @ManyToMany(() => ArticleEntity)

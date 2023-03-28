@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { HttpStatus } from '@nestjs/common/enums';
-import { HttpException } from '@nestjs/common/exceptions';
+import {
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common/exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { UserEntity } from 'src/user/entities/user.entity';
@@ -26,6 +28,8 @@ export class ArticleService {
       .leftJoinAndSelect('articles.author', 'author');
 
     queryBuilder.orderBy('articles.createdAt', 'DESC');
+    queryBuilder.limit(query.limit || 20);
+    queryBuilder.offset(query.offset || 0);
 
     if (query.tag) {
       queryBuilder.andWhere('articles.tagList ILIKE :tag', {
@@ -39,7 +43,7 @@ export class ArticleService {
       });
 
       if (!author) {
-        throw new HttpException('Author doesnt exist', HttpStatus.NOT_FOUND);
+        throw new NotFoundException("Author doesn't exist");
       }
 
       queryBuilder.andWhere('articles.authorId = :id', { id: author.id });
@@ -52,7 +56,7 @@ export class ArticleService {
       });
 
       if (!author) {
-        throw new HttpException('Author doesnt exist', HttpStatus.NOT_FOUND);
+        throw new NotFoundException("Author doesn't exist");
       }
 
       const ids = author.favorites.map((favorite) => favorite.id);
@@ -61,14 +65,6 @@ export class ArticleService {
       } else {
         queryBuilder.andWhere('1=0');
       }
-    }
-
-    if (query.limit) {
-      queryBuilder.limit(query.limit);
-    }
-
-    if (query.offset) {
-      queryBuilder.offset(query.offset);
     }
 
     let favoriteIds: number[] = [];
@@ -171,11 +167,11 @@ export class ArticleService {
     const article = await this.getArticle(slug);
 
     if (!article) {
-      throw new HttpException('Article doesnt exist', HttpStatus.NOT_FOUND);
+      throw new NotFoundException("Article doesn't exist");
     }
 
     if (article.author.id !== currentUserId) {
-      throw new HttpException('You are not an author', HttpStatus.FORBIDDEN);
+      throw new ForbiddenException('You are not an author');
     }
 
     return await this.articleRepository.delete({ slug });
@@ -189,11 +185,11 @@ export class ArticleService {
     const article = await this.getArticle(slug);
 
     if (!article) {
-      throw new HttpException('Article doesnt exist', HttpStatus.NOT_FOUND);
+      throw new NotFoundException("Article doesn't exist");
     }
 
     if (article.author.id !== currentUserId) {
-      throw new HttpException('You are not an author', HttpStatus.FORBIDDEN);
+      throw new ForbiddenException('You are not an author');
     }
 
     Object.assign(article, dto);
