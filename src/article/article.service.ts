@@ -6,12 +6,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { UserEntity } from 'src/user/entities/user.entity';
-import { DeleteResult, Repository } from 'typeorm';
-import { ArticleEntity } from './article.entity';
+import { DeleteResult, In, Repository } from 'typeorm';
+import { ArticleEntity } from './entities/article.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { QueryDto } from './dto/query.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
+import { ArticlesResponseInterface } from './types/articlesResponce.interface';
+import { FollowEntity } from 'src/profile/entities/profile.entity';
 
 @Injectable()
 export class ArticleService {
@@ -20,9 +22,14 @@ export class ArticleService {
     private readonly articleRepository: Repository<ArticleEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(FollowEntity)
+    private readonly followRepository: Repository<FollowEntity>,
   ) {}
 
-  async findAll(currentUserId: number, query: QueryDto) {
+  async findAll(
+    currentUserId: number,
+    query: QueryDto,
+  ): Promise<ArticlesResponseInterface> {
     const queryBuilder = this.articleRepository
       .createQueryBuilder('articles')
       .leftJoinAndSelect('articles.author', 'author');
@@ -84,6 +91,32 @@ export class ArticleService {
     });
 
     return { articles: articlesWithFavorites, articlesCount };
+  }
+
+  async getFeed(
+    currentUserId: number,
+    query: QueryDto,
+  ): Promise<ArticlesResponseInterface> {
+    const follows = this.followRepository.find({
+      where: { followerId: currentUserId },
+    });
+
+    if ((await follows).length === 0) {
+      return { articles: [], articlesCount: 0 };
+    }
+
+    const followingUserIds = (await follows).map(
+      (follow) => follow.followingId,
+    );
+
+    const feedPosts = await this.articleRepository.find({
+      where: { author: In(followingUserIds) },
+      order: { updatedAt: 'DESC' },
+      take: 20 || query.limit,
+      skip: 0 || query.offset,
+    });
+
+    return { articles: feedPosts, articlesCount: feedPosts.length };
   }
 
   async createArticle(

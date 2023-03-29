@@ -32,6 +32,10 @@ export class ProfileService {
       throw new NotFoundException("Profile doesn't exist");
     }
 
+    if (currentUserId === undefined) {
+      return { ...user, following: false };
+    }
+
     const follow = await this.followRepository.findOneBy({
       followerId: currentUserId,
       followingId: user.id,

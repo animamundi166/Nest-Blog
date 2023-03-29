@@ -1,4 +1,4 @@
-import { ArticleEntity } from 'src/article/article.entity';
+import { ArticleEntity } from 'src/article/entities/article.entity';
 import {
   Column,
   Entity,

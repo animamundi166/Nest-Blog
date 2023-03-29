@@ -33,6 +33,15 @@ export class ArticleController {
   }
 
   @Auth()
+  @Get('feed')
+  async getFeed(
+    @User('id') currentUserId: number,
+    @Query() query: QueryDto,
+  ): Promise<ArticlesResponseInterface> {
+    return await this.articleService.getFeed(currentUserId, query);
+  }
+
+  @Auth()
   @Post()
   async createArticle(
     @User() currentUser: UserEntity,
