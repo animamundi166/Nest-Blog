@@ -4,9 +4,11 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { CommentEntity } from './comment.entity';
 
 @Entity('articles')
 export class ArticleEntity {
@@ -39,4 +41,7 @@ export class ArticleEntity {
 
   @ManyToOne(() => UserEntity, (u) => u.articles, { eager: true })
   author: UserEntity;
+
+  @OneToMany(() => CommentEntity, (c) => c.article)
+  comments: CommentEntity[];
 }

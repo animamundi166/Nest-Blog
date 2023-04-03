@@ -1,4 +1,5 @@
 import { ArticleEntity } from 'src/article/entities/article.entity';
+import { CommentEntity } from 'src/article/entities/comment.entity';
 import {
   Column,
   Entity,
@@ -30,6 +31,9 @@ export class UserEntity {
 
   @OneToMany(() => ArticleEntity, (a) => a.author)
   articles: ArticleEntity[];
+
+  @OneToMany(() => CommentEntity, (c) => c.author)
+  comments: CommentEntity[];
 
   @ManyToMany(() => ArticleEntity)
   @JoinTable()

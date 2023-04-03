@@ -14,6 +14,9 @@ import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
 import { ArticlesResponseInterface } from './types/articlesResponce.interface';
 import { FollowEntity } from 'src/profile/entities/profile.entity';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { CommentEntity } from './entities/comment.entity';
+import { CommentResponseInterface } from './types/commentResponce.interface';
 
 @Injectable()
 export class ArticleService {
@@ -24,6 +27,8 @@ export class ArticleService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(FollowEntity)
     private readonly followRepository: Repository<FollowEntity>,
+    @InjectRepository(CommentEntity)
+    private readonly commentRepository: Repository<CommentEntity>,
   ) {}
 
   async findAll(
@@ -112,8 +117,8 @@ export class ArticleService {
     const feedPosts = await this.articleRepository.find({
       where: { author: In(followingUserIds) },
       order: { updatedAt: 'DESC' },
-      take: 20 || query.limit,
-      skip: 0 || query.offset,
+      take: query.limit || 20,
+      skip: query.offset || 0,
     });
 
     return { articles: feedPosts, articlesCount: feedPosts.length };
@@ -125,7 +130,6 @@ export class ArticleService {
   ): Promise<ArticleEntity> {
     const article = new ArticleEntity();
     Object.assign(article, dto);
-
     article.slug = this.getSlug(dto.title);
     article.author = currentUser;
     return this.articleRepository.save(article);
@@ -227,5 +231,71 @@ export class ArticleService {
 
     Object.assign(article, dto);
     return this.articleRepository.save(article);
+  }
+
+  async addComment(
+    currentUser: UserEntity,
+    dto: CreateCommentDto,
+    slug: string,
+  ): Promise<CommentEntity> {
+    const article = await this.getArticle(slug);
+
+    if (!article) {
+      throw new NotFoundException("Article doesn't exist");
+    }
+    const comment = new CommentEntity();
+    Object.assign(comment, dto);
+    comment.article = article;
+    comment.author = currentUser;
+    return this.commentRepository.save(comment);
+  }
+
+  async getComments(
+    currentUserId: number,
+    slug: string,
+  ): Promise<CommentEntity[]> {
+    const article = await this.getArticle(slug);
+
+    if (!article) {
+      throw new NotFoundException("Article doesn't exist");
+    }
+
+    console.log(currentUserId);
+
+    const comments = await this.commentRepository.find({
+      where: { author: { id: currentUserId } },
+      order: { updatedAt: 'DESC' },
+    });
+
+    return comments;
+  }
+
+  async deleteComment(
+    currentUserId: number,
+    slug: string,
+    id: number,
+  ): Promise<DeleteResult> {
+    const article = await this.getArticle(slug);
+
+    if (!article) {
+      throw new NotFoundException("Article doesn't exist");
+    }
+
+    const comment = await this.commentRepository.findOneBy({ id });
+
+    if (!comment) {
+      throw new NotFoundException("Comment doesn't exist");
+    }
+
+    if (comment.author.id !== currentUserId) {
+      throw new ForbiddenException('You are not an author');
+    }
+
+    return await this.commentRepository.delete(comment.id);
+  }
+
+  buildCommentResponse(comment: CommentEntity): CommentResponseInterface {
+    delete comment.article;
+    return { comment };
   }
 }

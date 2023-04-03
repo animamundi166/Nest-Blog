@@ -23,11 +23,23 @@ export class UserService {
     username,
     password,
   }: RegisterDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: {},
+    };
+
     const userByEmail = await this.userRepository.findOneBy({ email });
     const userByUsername = await this.userRepository.findOneBy({ username });
 
+    if (userByEmail) {
+      errorResponse.errors['email'] = 'Email or username are taken';
+    }
+
+    if (userByUsername) {
+      errorResponse.errors['username'] = 'Email or username are taken';
+    }
+
     if (userByEmail || userByUsername) {
-      throw new UnprocessableEntityException('Email or username are taken');
+      throw new UnprocessableEntityException(errorResponse);
     }
 
     const hashPassword = await hash(password, 10);
@@ -38,6 +50,10 @@ export class UserService {
   }
 
   async login({ email, password }: LoginDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: { email: 'Credentials are not valid' },
+    };
+
     const user = await this.userRepository.findOne({
       where: { email },
       select: {
@@ -51,13 +67,13 @@ export class UserService {
     });
 
     if (!user) {
-      throw new UnprocessableEntityException('Credentials are not valid');
+      throw new UnprocessableEntityException(errorResponse);
     }
 
     const isPasswordCorrect = await compare(password, user.password);
 
     if (!isPasswordCorrect) {
-      throw new UnprocessableEntityException('Credentials are not valid');
+      throw new UnprocessableEntityException(errorResponse);
     }
 
     delete user.password;
