@@ -250,24 +250,46 @@ export class ArticleService {
     return this.commentRepository.save(comment);
   }
 
-  async getComments(
-    currentUserId: number,
-    slug: string,
-  ): Promise<CommentEntity[]> {
+  async getComments(currentUserId: number, slug: string) {
     const article = await this.getArticle(slug);
 
     if (!article) {
       throw new NotFoundException("Article doesn't exist");
     }
 
-    console.log(currentUserId);
-
     const comments = await this.commentRepository.find({
-      where: { author: { id: currentUserId } },
-      order: { updatedAt: 'DESC' },
+      where: {
+        article: { id: article.id },
+      },
+      order: { createdAt: 'DESC' },
     });
 
-    return comments;
+    if (currentUserId === undefined) {
+      return comments.map((comment) => ({
+        ...comment,
+        author: { ...comment.author, following: false },
+      }));
+    }
+
+    if (currentUserId) {
+      const follows = await this.followRepository.find({
+        where: {
+          followerId: currentUserId,
+        },
+      });
+
+      const followingIds = follows.map((follow) => follow.followingId);
+
+      const articlesWithFollowing = comments.map((comment) => {
+        const following = followingIds.includes(comment.author.id);
+        return {
+          ...comment,
+          author: { ...comment.author, following },
+        };
+      });
+
+      return articlesWithFollowing;
+    }
   }
 
   async deleteComment(

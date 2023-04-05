@@ -20,7 +20,6 @@ import { ArticleResponseInterface } from './types/articleResponce.interface';
 import { ArticlesResponseInterface } from './types/articlesResponce.interface';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentResponseInterface } from './types/commentResponce.interface';
-import { CommentEntity } from './entities/comment.entity';
 
 @Controller('articles')
 export class ArticleController {
@@ -132,7 +131,7 @@ export class ArticleController {
   async getComments(
     @User('id') currentUserId: number,
     @Param('slug') slug: string,
-  ): Promise<CommentEntity[]> {
+  ) {
     return await this.articleService.getComments(currentUserId, slug);
   }
 
