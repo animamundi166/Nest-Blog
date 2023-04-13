@@ -1,5 +1,5 @@
-import { ArticleEntity } from '../entities/article.entity';
+import { articleWithArrayOfStringsInTagList } from './articleWithArrayOfStringsInTagList.interface';
 
 export interface ArticleResponseInterface {
-  article: ArticleEntity;
+  article: articleWithArrayOfStringsInTagList;
 }

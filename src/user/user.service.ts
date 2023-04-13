@@ -44,8 +44,11 @@ export class UserService {
 
     const hashPassword = await hash(password, 10);
 
-    const newUser = new UserEntity();
-    Object.assign(newUser, { email, username, password: hashPassword });
+    const newUser = this.userRepository.create({
+      email,
+      username,
+      password: hashPassword,
+    });
     return await this.userRepository.save(newUser);
   }
 
@@ -82,8 +85,7 @@ export class UserService {
 
   async updateUser(userId: number, dto: UpdateDto): Promise<UserEntity> {
     const user = await this.userRepository.findOneBy({ id: userId });
-    Object.assign(user, dto);
-    return await this.userRepository.save(user);
+    return await this.userRepository.save({ ...user, ...dto });
   }
 
   issueToken({ id }: UserEntity): string {

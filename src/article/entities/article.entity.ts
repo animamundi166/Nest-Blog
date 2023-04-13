@@ -3,12 +3,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CommentEntity } from './comment.entity';
+import { TagEntity } from 'src/tag/entities/tag.entity';
 
 @Entity('articles')
 export class ArticleEntity {
@@ -27,8 +30,9 @@ export class ArticleEntity {
   @Column({ default: '' })
   body: string;
 
-  @Column('simple-array', { default: '' })
-  tagList: string[];
+  @ManyToMany(() => TagEntity, { cascade: true })
+  @JoinTable({ name: 'article_tags' })
+  tagList: TagEntity[];
 
   @Column({ default: 0, name: 'favorites_count' })
   favoritesCount: number;

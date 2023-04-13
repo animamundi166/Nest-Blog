@@ -12,11 +12,11 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { QueryDto } from './dto/query.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
-import { ArticlesResponseInterface } from './types/articlesResponce.interface';
 import { FollowEntity } from 'src/profile/entities/profile.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentEntity } from './entities/comment.entity';
 import { CommentResponseInterface } from './types/commentResponce.interface';
+import { TagEntity } from 'src/tag/entities/tag.entity';
 
 @Injectable()
 export class ArticleService {
@@ -29,12 +29,11 @@ export class ArticleService {
     private readonly followRepository: Repository<FollowEntity>,
     @InjectRepository(CommentEntity)
     private readonly commentRepository: Repository<CommentEntity>,
+    @InjectRepository(TagEntity)
+    private readonly tagRepository: Repository<TagEntity>,
   ) {}
 
-  async findAll(
-    currentUserId: number,
-    query: QueryDto,
-  ): Promise<ArticlesResponseInterface> {
+  async findAll(currentUserId: number, query: QueryDto) {
     const queryBuilder = this.articleRepository
       .createQueryBuilder('articles')
       .leftJoinAndSelect('articles.author', 'author');
@@ -98,10 +97,7 @@ export class ArticleService {
     return { articles: articlesWithFavorites, articlesCount };
   }
 
-  async getFeed(
-    currentUserId: number,
-    query: QueryDto,
-  ): Promise<ArticlesResponseInterface> {
+  async getFeed(currentUserId: number, query: QueryDto) {
     const follows = this.followRepository.find({
       where: { followerId: currentUserId },
     });
@@ -128,11 +124,16 @@ export class ArticleService {
     currentUser: UserEntity,
     dto: CreateArticleDto,
   ): Promise<ArticleEntity> {
-    const article = new ArticleEntity();
-    Object.assign(article, dto);
-    article.slug = this.getSlug(dto.title);
-    article.author = currentUser;
-    return this.articleRepository.save(article);
+    const tags = await Promise.all(
+      dto.tagList.map((tag) => this.preloadTagByName(tag)),
+    );
+    const article = this.articleRepository.create({
+      ...dto,
+      tagList: tags,
+      slug: this.getSlug(dto.title),
+      author: currentUser,
+    });
+    return await this.articleRepository.save(article);
   }
 
   async addToFavorites(
@@ -182,7 +183,11 @@ export class ArticleService {
   }
 
   buildArticleResponse(article: ArticleEntity): ArticleResponseInterface {
-    return { article };
+    if (article.tagList?.length > 0) {
+      const tagListName = article.tagList.map((tag) => tag.name);
+      return { article: { ...article, tagList: tagListName } };
+    }
+    return { article: { ...article, tagList: [] } };
   }
 
   private getSlug(title: string): string {
@@ -193,8 +198,16 @@ export class ArticleService {
     );
   }
 
+  private async preloadTagByName(name: string): Promise<TagEntity> {
+    const existingTag = await this.tagRepository.findOneBy({ name });
+    if (existingTag) {
+      return existingTag;
+    }
+    return this.tagRepository.create({ name });
+  }
+
   async getArticle(slug: string): Promise<ArticleEntity> {
-    return this.articleRepository.findOneBy({ slug });
+    return await this.articleRepository.findOneBy({ slug });
   }
 
   async deleteArticle(
@@ -229,8 +242,15 @@ export class ArticleService {
       throw new ForbiddenException('You are not an author');
     }
 
-    Object.assign(article, dto);
-    return this.articleRepository.save(article);
+    const tags =
+      dto.tagList &&
+      (await Promise.all(dto.tagList.map((tag) => this.preloadTagByName(tag))));
+
+    return await this.articleRepository.save({
+      ...article,
+      ...dto,
+      tagList: tags,
+    });
   }
 
   async addComment(
@@ -243,11 +263,13 @@ export class ArticleService {
     if (!article) {
       throw new NotFoundException("Article doesn't exist");
     }
-    const comment = new CommentEntity();
-    Object.assign(comment, dto);
-    comment.article = article;
-    comment.author = currentUser;
-    return this.commentRepository.save(comment);
+    const comment = this.commentRepository.create({
+      ...dto,
+      author: currentUser,
+      article,
+    });
+
+    return await this.commentRepository.save(comment);
   }
 
   async getComments(currentUserId: number, slug: string) {

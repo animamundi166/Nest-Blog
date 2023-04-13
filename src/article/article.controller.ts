@@ -17,7 +17,6 @@ import { CreateArticleDto } from './dto/create-article.dto';
 import { QueryDto } from './dto/query.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleResponseInterface } from './types/articleResponce.interface';
-import { ArticlesResponseInterface } from './types/articlesResponce.interface';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentResponseInterface } from './types/commentResponce.interface';
 
@@ -27,19 +26,13 @@ export class ArticleController {
 
   @OptionalAuth()
   @Get()
-  async findAll(
-    @User('id') currentUserId: number,
-    @Query() query: QueryDto,
-  ): Promise<ArticlesResponseInterface> {
+  async findAll(@User('id') currentUserId: number, @Query() query: QueryDto) {
     return await this.articleService.findAll(currentUserId, query);
   }
 
   @Auth()
   @Get('feed')
-  async getFeed(
-    @User('id') currentUserId: number,
-    @Query() query: QueryDto,
-  ): Promise<ArticlesResponseInterface> {
+  async getFeed(@User('id') currentUserId: number, @Query() query: QueryDto) {
     return await this.articleService.getFeed(currentUserId, query);
   }
 

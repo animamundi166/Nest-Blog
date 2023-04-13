@@ -6,6 +6,7 @@ import { ArticleEntity } from './entities/article.entity';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { FollowEntity } from 'src/profile/entities/profile.entity';
 import { CommentEntity } from './entities/comment.entity';
+import { TagEntity } from 'src/tag/entities/tag.entity';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CommentEntity } from './entities/comment.entity';
       UserEntity,
       FollowEntity,
       CommentEntity,
+      TagEntity,
     ]),
   ],
   controllers: [ArticleController],
