@@ -1,10 +1,11 @@
-import { Body, Controller, HttpCode, Get, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Get, Post, Put } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Auth } from './decorators/auth.decorator';
 import { CurrentUser } from './decorators/user.decorator';
 import { User } from '@prisma/client';
+import { UpdateDto } from './dto/update.dto';
 
 @Controller()
 export class UserController {
@@ -24,6 +25,16 @@ export class UserController {
   @Auth()
   @Get('user')
   async getCurrentUser(@CurrentUser() currentUser: User) {
+    console.log(currentUser);
     return this.userService.buildUserResponse(currentUser);
+  }
+
+  @Auth()
+  @Put('user')
+  async updateUser(
+    @CurrentUser() currentUser: User,
+    @Body('user') dto: UpdateDto,
+  ) {
+    return await this.userService.updateUser(currentUser, dto);
   }
 }

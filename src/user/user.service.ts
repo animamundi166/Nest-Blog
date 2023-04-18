@@ -5,6 +5,7 @@ import { hash, verify } from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
+import { UpdateDto } from './dto/update.dto';
 
 @Injectable()
 export class UserService {
@@ -31,19 +32,33 @@ export class UserService {
   }
 
   async login({ email, password }: LoginDto) {
-    const userByEmail = await this.findUserByEmail(email);
+    const user = await this.findUserByEmail(email);
 
-    if (!userByEmail) {
+    if (!user) {
       throw new UnprocessableEntityException('Credentials are not valid');
     }
 
-    const isPasswordCorrect = await verify(userByEmail.password, password);
+    const isPasswordCorrect = await verify(user.password, password);
 
     if (!isPasswordCorrect) {
       throw new UnprocessableEntityException('Credentials are not valid');
     }
 
-    return this.buildUserResponse(userByEmail);
+    return this.buildUserResponse(user);
+  }
+
+  async updateUser(currentUser: User, dto: UpdateDto) {
+    const user = await this.findUserByEmail(currentUser.email);
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...user,
+        ...dto,
+        password: dto.password ? await hash(dto.password) : user.password,
+      },
+    });
+
+    return this.buildUserResponse(updatedUser);
   }
 
   private async findUserByEmail(email: string) {
