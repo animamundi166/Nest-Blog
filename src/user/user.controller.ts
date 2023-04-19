@@ -25,7 +25,6 @@ export class UserController {
   @Auth()
   @Get('user')
   async getCurrentUser(@CurrentUser() currentUser: User) {
-    console.log(currentUser);
     return this.userService.buildUserResponse(currentUser);
   }
 

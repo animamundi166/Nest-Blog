@@ -61,7 +61,7 @@ export class UserService {
     return this.buildUserResponse(updatedUser);
   }
 
-  private async findUserByEmail(email: string) {
+  private async findUserByEmail(email: string): Promise<User> {
     return await this.prisma.user.findUnique({ where: { email } });
   }
 

@@ -7,33 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Tags {
-  id   Int    @id @default(autoincrement())
-  name String
-}
-
 model User {
   id        Int              @id @default(autoincrement())
   email     String           @unique
   username  String           @unique
-  bio       String           @default("")
-  image     String           @default("")
+  bio       String?
+  image     String?
   password  String
   articles  Article[]
   comments  Comment[]
   favorites UsersFavorites[]
+  follower  Follows[]        @relation("follower")
+  following Follows[]        @relation("following")
 }
 
 model Article {
   id             Int              @id @default(autoincrement())
   slug           String
   title          String
-  description    String           @default("")
-  body           String           @default("")
+  description    String?
+  body           String?
   favoritesCount Int              @default(0) @map("favorites_count")
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
-  tagList        ArticleTags[]
+  tagList        Tag[]
   author         User             @relation(fields: [authorId], references: [id])
   authorId       Int
   comments       Comment[]
@@ -52,9 +49,10 @@ model Comment {
 }
 
 model Tag {
-  id          Int           @id @default(autoincrement())
-  name        String        @default("")
-  ArticleTags ArticleTags[]
+  id        Int     @id @default(autoincrement())
+  name      String  @unique @default("")
+  article   Article @relation(fields: [articleId], references: [id])
+  articleId Int
 }
 
 model UsersFavorites {
@@ -66,11 +64,11 @@ model UsersFavorites {
   @@id([userId, articleId])
 }
 
-model ArticleTags {
-  article   Article @relation(fields: [articleId], references: [id])
-  articleId Int
-  tag       Tag     @relation(fields: [tagId], references: [id])
-  tagId     Int
+model Follows {
+  follower    User @relation("follower", fields: [followerId], references: [id])
+  followerId  Int
+  following   User @relation("following", fields: [followingId], references: [id])
+  followingId Int
 
-  @@id([articleId, tagId])
+  @@id([followerId, followingId])
 }
